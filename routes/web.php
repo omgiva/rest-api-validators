@@ -33,7 +33,7 @@ $api->version('v1', function ($api) {
     });*/
 
 
-    $api->get('validate/phone/{number}', ['uses' =>'App\Http\Controllers\Api\ValidatorController@phone']);
+    $api->get('validate/phone/{number}', ['middleware' => 'cors', 'uses' =>'App\Http\Controllers\Api\ValidatorController@phone']);
 
 
 });
