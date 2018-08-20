@@ -2,47 +2,39 @@
 
 namespace App\Http\Controllers\Api;
 
-use Laravel\Lumen\Routing\Controller as BaseController;
+use App\Transformers\Errors\PhoneNumberInvalidFormatTransformer;
+use App\Transformers\Errors\PhoneNumberInvalidLengthTransformer;
 use App\Transformers\PhoneNumberTransformer;
-use Dingo\Api\Routing\Helpers;
-use StdClass;
 use Brick\PhoneNumber\PhoneNumber;
-use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
+use Dingo\Api\Routing\Helpers;
+use Laravel\Lumen\Routing\Controller as BaseController;
+use StdClass;
 
-class ValidatorController extends BaseController
-{
-    //
+class ValidatorController extends BaseController {
+	//
 
-    use Helpers;
+	use Helpers;
 
-    public function phone($number)
-    {
+	public function phone($number) {
 
-        $numberObject = new StdClass;
-        $numberObject->raw = $number;
+		$numberObject = new StdClass;
+		$numberObject->raw = $number;
 
-        //return $this->response->item($numberObject, new PhoneNumberTransformer);
-        //return $number;
+		try {
+			$parsed = PhoneNumber::parse($number);
+			$isValidNumber = $parsed->isValidNumber();
 
-        try {
-            $parsed = PhoneNumber::parse($number);
-            $isValidNumber = $parsed->isValidNumber();
+			if (!$isValidNumber) {
 
-            if (!$isValidNumber) {
+				return $this->response->item($numberObject, new PhoneNumberInvalidFormatTransformer);
+			} else {
 
-                throw new BadRequestHttpException('That is not a valid phone number');
-            } else {
+				return $this->response->item($numberObject, new PhoneNumberTransformer);
+			}
 
-                
-                return $this->response->item($numberObject, new PhoneNumberTransformer);
-            }
+		} catch (PhoneNumberParseException $e) {
 
-            
-
-        }
-        catch (PhoneNumberParseException $e) {
-            // 'The string supplied is too short to be a phone number.'
-            throw new Symfony\Component\HttpKernel\Exception\BadRequestHttpException($e->getMessage());
-        }
-    }
+			return $this->response->item($numberObject, new PhoneNumberInvalidLengthTransformer);
+		}
+	}
 }
